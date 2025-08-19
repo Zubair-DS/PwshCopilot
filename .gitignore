@@ -1,0 +1,12 @@
+# PowerShell module build artifacts
+*.psd1.tmp
+*.psm1.tmp
+
+# Logs
+*.log
+
+# Local user config (not committed)
+# (Configuration file is stored in user profile, so nothing here yet)
+
+# VS Code
+.vscode/
