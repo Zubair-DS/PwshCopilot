@@ -110,6 +110,24 @@ Please open an Issue first for larger changes (new providers, architectural chan
 - [ ] Pester test suite
 - [ ] GitHub Action: CI (PSScriptAnalyzer + minimal Pester tests)
 
+## Extending: Writing a Provider (Experimental)
+Create a new file under `Providers/YourProvider.ps1` and register it:
+```powershell
+Register-PwshCopilotProvider -Name 'MyProvider' -Description 'Calls my internal API' -Invoke {
+	param($Prompt,$Context)
+	# TODO: call your service and return a string
+	Invoke-RestMethod -Uri "https://internal/api" -Method Post -Body (@{ q = $Prompt } | ConvertTo-Json)
+} -Validate {
+	# Optional: throw if prerequisites missing
+	return $true
+}
+```
+List registered providers:
+```powershell
+Get-PwshCopilotProviders | Format-Table Name,Description,Registered
+```
+See `Providers/SampleProvider.Template.ps1` for a starter template.
+
 ## Security & Privacy
 No credentials are stored outside your user profile config file. They are never sent anywhere except directly to the chosen LLM API endpoint. Always review generated commands before execution.
 

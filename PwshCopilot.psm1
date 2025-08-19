@@ -3,6 +3,38 @@
 . "$PSScriptRoot\Private\LLMClient.ps1"
 . "$PSScriptRoot\Private\Completer.ps1"
 
+# Load optional community providers from Providers/*.ps1
+$providerFolder = Join-Path $PSScriptRoot 'Providers'
+if (Test-Path $providerFolder) {
+    Get-ChildItem -Path $providerFolder -Filter *.ps1 -File -ErrorAction SilentlyContinue | ForEach-Object {
+        . $_.FullName
+    }
+}
+
+# Internal registry for dynamic providers
+if (-not $Script:PwshCopilotProviders) { $Script:PwshCopilotProviders = @{} }
+
+function Register-PwshCopilotProvider {
+    [CmdletBinding()] param(
+        [Parameter(Mandatory)][string]$Name,
+        [Parameter(Mandatory)][ScriptBlock]$Invoke,
+        [ScriptBlock]$Validate,
+        [string]$Description = 'Community provider'
+    )
+    $Script:PwshCopilotProviders[$Name] = [pscustomobject]@{
+        Name        = $Name
+        Invoke      = $Invoke
+        Validate    = $Validate
+        Description = $Description
+        Registered  = (Get-Date)
+    }
+}
+
+function Get-PwshCopilotProviders {
+    [CmdletBinding()] param()
+    $Script:PwshCopilotProviders.GetEnumerator() | ForEach-Object { $_.Value }
+}
+
 
 # Ensure configuration on import (prompts on first run if missing or on version change)
 $PwshCopilotConfigPath = "$env:USERPROFILE\.pwshcopilot_config.json"

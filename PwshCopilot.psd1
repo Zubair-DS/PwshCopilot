@@ -14,7 +14,9 @@
         'Start-PSCopilotSession',
         'Invoke-PSCopilotDemo',
         'Enable-PSCopilotCompletion',
-        'Initialize-PwshCopilot'
+    'Initialize-PwshCopilot',
+    'Get-PwshCopilotProviders',
+    'Register-PwshCopilotProvider'
     )
     AliasesToExport = @('Explain-PSCommand')
     FileList = @('PwshCopilot.psm1')
