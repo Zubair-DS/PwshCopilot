@@ -1,6 +1,11 @@
 
 # PwshCopilot
 
+![PowerShell Gallery Version](https://img.shields.io/powershellgallery/v/PwshCopilot?label=PwshCopilot&logo=powershell)
+![Downloads](https://img.shields.io/powershellgallery/dt/PwshCopilot)
+![License](https://img.shields.io/badge/license-MIT-blue.svg)
+![Platform](https://img.shields.io/badge/platform-PowerShell%205.1%2B%20%7C%20Core%207+-purple)
+
 ## Post-installation: Required Setup for End Users
 
 After installing the module with:
@@ -79,3 +84,41 @@ Enable-PSCopilotCompletion
 - **Start-PSCopilotSession**: Start an interactive session with inline AI suggestions.
 - **Enable-PSCopilotCompletion**: Enable Tab-triggered AI completions for the current session.
 - **Initialize-PwshCopilot**: Run interactive setup or reconfigure provider/credentials.
+
+## Contributing
+
+PwshCopilot is open source and welcomes contributions of all sizes:
+
+1. Fork the repo and create a branch (`feature/your-idea`)
+2. Run / update tests (none yet—see roadmap) and ensure scripts lint clean with PSScriptAnalyzer
+3. Submit a Pull Request with a clear description and screenshots / transcripts where helpful
+
+Please open an Issue first for larger changes (new providers, architectural changes) so we can discuss direction.
+
+### Good First Contribution Ideas
+- Add unit tests around config validation
+- Add provider-specific key format pre-validation
+- Add streaming output support
+- Improve completion ranking heuristics
+- Add a `Remove-PwshCopilotConfig` convenience function
+
+## Roadmap (Early Draft)
+- [ ] Pluggable provider model (drop new provider without core edits)
+- [ ] Caching layer for repeated prompts
+- [ ] Script inline annotations (explain each line)
+- [ ] Optional telemetry (opt-in) for feature usage to guide roadmap
+- [ ] Pester test suite
+- [ ] GitHub Action: CI (PSScriptAnalyzer + minimal Pester tests)
+
+## Security & Privacy
+No credentials are stored outside your user profile config file. They are never sent anywhere except directly to the chosen LLM API endpoint. Always review generated commands before execution.
+
+## Feedback & Recommendations
+Have ideas to make this more useful? Open an Issue titled `Idea:` or start a Discussion. Looking especially for:
+- Edge case prompts that failed or produced unsafe commands
+- Desired providers / models
+- UX improvements for the interactive session
+- Completion speed & quality feedback
+
+## Star & Share
+If this helps you, please star the repository—it helps others discover it and guides future investment.
