@@ -18,6 +18,18 @@ if (Get-Command Invoke-WhisperTranscription -ErrorAction SilentlyContinue) {
 # Ensure configuration on import (prompts on first run if missing)
 Initialize-PwshCopilot
 
+<#
+.SYNOPSIS
+Generate a PowerShell command from a natural language description.
+.DESCRIPTION
+Sends the supplied description text to the configured LLM provider and returns one or more suggested PowerShell commands.
+Use when you know the goal but not the exact syntax.
+.PARAMETER Description
+Natural language task description (what you want to accomplish).
+.EXAMPLE
+Get-PSCommandSuggestion -Description 'list top 5 processes by CPU'
+Generates an appropriate Get-Process pipeline.
+#>
 function Get-PSCommandSuggestion {
     param([string]$Description)
     $prompt = "Convert to PowerShell:\n$Description"
@@ -99,6 +111,20 @@ function Test-PSCopilotNegativeResponse {
     return $false
 }
 
+<#
+.SYNOPSIS
+Explain a PowerShell command in plain English.
+.DESCRIPTION
+Wraps the LLM call with an explanation prompt to return an easy to read description of what the provided command does.
+.PARAMETER Command
+The PowerShell command text to explain.
+.EXAMPLE
+Get-PSCommandExplanation -Command 'Get-Service | Where-Object Status -eq Running'
+Returns a short explanation of the pipeline.
+.EXAMPLE
+"Get-ChildItem -Recurse | Measure-Object" | Get-PSCommandExplanation
+Pipeline example explaining a command passed via pipeline (after manual binding).
+#>
 function Get-PSCommandExplanation {
     param([string]$Command)
     $prompt = "Explain in plain English what this does:\n$Command"
@@ -107,6 +133,19 @@ function Get-PSCommandExplanation {
 Set-Alias -Name Explain-PSCommand -Value Get-PSCommandExplanation
 Export-ModuleMember -Function Get-PSCommandExplanation -Alias Explain-PSCommand -ErrorAction SilentlyContinue
 
+<#
+.SYNOPSIS
+Generate and save a PowerShell script from a natural language description.
+.DESCRIPTION
+Requests a full script (multi-line) from the LLM based on a description and writes the result into a timestamped .ps1 file under the target folder.
+.PARAMETER Description
+Natural language description of the script you want generated.
+.PARAMETER OutputPath
+Directory where the generated script file will be saved (default: Documents\PwshCopilot).
+.EXAMPLE
+New-PSHelperScript -Description 'monitor disk space and email if below 10%'
+Creates a new script implementing the requested logic.
+#>
 function New-PSHelperScript {
     param([string]$Description, [string]$OutputPath = "$env:USERPROFILE\Documents\PwshCopilot")
     if (-not (Test-Path $OutputPath)) { New-Item -ItemType Directory -Path $OutputPath | Out-Null }
@@ -121,6 +160,15 @@ function New-PSHelperScript {
 }
 Export-ModuleMember -Function New-PSHelperScript -ErrorAction SilentlyContinue
 
+<#
+.SYNOPSIS
+Start an interactive text chat with the Copilot.
+.DESCRIPTION
+Opens a loop prompting for user input, sending conversation context to the LLM and offering to execute proposed command output after confirmation.
+.EXAMPLE
+Start-PSCopilotSession
+Begins an interactive session; type 'exit' or say an exit phrase to leave.
+#>
 function Start-PSCopilotSession {
 	Write-Host "PwshCopilot session started. Type 'exit' to quit."
 	$messages = @()
@@ -172,6 +220,21 @@ function Start-PSCopilotSession {
 }
 Export-ModuleMember -Function Start-PSCopilotSession -ErrorAction SilentlyContinue
 
+<#
+.SYNOPSIS
+Run a non-interactive scripted demo against a list of prompts.
+.DESCRIPTION
+Iterates over supplied prompts, showing assistant responses and executing generated commands automatically for demonstration / testing purposes.
+.PARAMETER Prompts
+Array of prompt strings to send sequentially.
+.PARAMETER ExitInput
+Exit phrase to simulate at the end (default 'thanks').
+.PARAMETER SimulateNoAfterInvite
+If set, simulates a 'no' response when the assistant invites further questions.
+.EXAMPLE
+Invoke-PSCopilotDemo -Prompts 'list services','count processes'
+Runs two demo prompts.
+#>
 function Invoke-PSCopilotDemo {
     param(
         [Parameter(Mandatory=$true)]
@@ -213,6 +276,16 @@ function Invoke-PSCopilotDemo {
 }
 Export-ModuleMember -Function Invoke-PSCopilotDemo -ErrorAction SilentlyContinue
 
+<#
+.SYNOPSIS
+Enable AI powered Tab completions for the current session.
+.DESCRIPTION
+Registers a universal argument completer that sends recent command history and last error to the LLM to obtain plausible next tokens.
+Disable by starting a new session (no global state is persisted).
+.EXAMPLE
+Enable-PSCopilotCompletion
+Activates completions; press Tab while typing to cycle AI suggestions.
+#>
 function Enable-PSCopilotCompletion {
     # Helper: Collect session context (recent commands + last error)
     function Get-PSCopilotContext {
@@ -267,6 +340,24 @@ Suggest several possible next completions. Return them as a list.
 Export-ModuleMember -Function Enable-PSCopilotCompletion -ErrorAction SilentlyContinue
 
 # Voice-driven session: capture spoken requests -> generate command -> confirm -> optional execute
+<#
+.SYNOPSIS
+Interactive voice→command session (primary advanced voice loop).
+.DESCRIPTION
+Captures short audio clips (microphone) per request, transcribes via configured provider (Whisper recommended), asks LLM for a command, then confirms by voice or typed input before optional execution.
+.PARAMETER CaptureSeconds
+Number of seconds to record for each request (default 5).
+.PARAMETER AutoExecuteOnSingleSuggestion
+If provided, executes without asking for confirmation.
+.PARAMETER NoAudioOutput
+Skip TTS / audio output when using legacy speech provider.
+.PARAMETER VerboseTranscripts
+Displays raw transcribed text segments in the console.
+.PARAMETER DeviceName
+Explicit input device (see Invoke-WhisperTranscription -ListDevices).
+.EXAMPLE
+Start-PSCopilotVoiceSession -CaptureSeconds 6 -VerboseTranscripts
+#>
 function Start-PSCopilotVoiceSession {
     [CmdletBinding(SupportsShouldProcess=$true, ConfirmImpact='Medium')]
     param(
@@ -388,6 +479,20 @@ function Start-PSCopilotVoiceSession {
 
 
 # Basic voice session (no TTS): voice -> text -> command -> voice confirm -> execute
+<#
+.SYNOPSIS
+Simplified voice session without audio output or advanced confirmation logic.
+.DESCRIPTION
+Records audio, transcribes, produces a command, then prompts for yes/no (voice or typed). Useful in constrained environments.
+.PARAMETER CaptureSeconds
+Recording duration in seconds (default 5).
+.PARAMETER VerboseTranscripts
+Show raw transcription text.
+.PARAMETER DeviceName
+Explicit audio input device name.
+.EXAMPLE
+Start-PSCopilotVoiceSessionBasic -CaptureSeconds 4
+#>
 function Start-PSCopilotVoiceSessionBasic {
     [CmdletBinding(SupportsShouldProcess=$true, ConfirmImpact='Medium')]
     param(
@@ -446,6 +551,24 @@ function Start-PSCopilotVoiceSessionBasic {
 }
 
 
+<#
+.SYNOPSIS
+Unified entry point for voice-driven Copilot sessions.
+.DESCRIPTION
+Chooses the advanced or basic voice session implementation depending on the -Basic switch. Provides a stable public surface while internals evolve.
+.PARAMETER CaptureSeconds
+Recording duration for each request.
+.PARAMETER VerboseTranscripts
+Emit transcription text to console.
+.PARAMETER Basic
+Use the simpler basic loop (no TTS, lighter logic).
+.PARAMETER DeviceName
+Explicit audio input device name.
+.EXAMPLE
+Start-VoiceCopilot -CaptureSeconds 5
+.EXAMPLE
+Start-VoiceCopilot -Basic -VerboseTranscripts
+#>
 function Start-VoiceCopilot {
     [CmdletBinding(SupportsShouldProcess=$true)]
     param(

@@ -1,6 +1,17 @@
 $Script:ConfigPath = "$env:USERPROFILE\.pwshcopilot_config.json"
 $ConfigPath = $Script:ConfigPath
 
+<#
+.SYNOPSIS
+Initialize or reconfigure core LLM provider settings for PwshCopilot.
+.DESCRIPTION
+Creates or updates the JSON configuration file storing provider choice (Azure OpenAI / OpenAI / Claude) and required authentication & model/deployment values. Prompts interactively for missing fields. Use -Force to overwrite existing config.
+.PARAMETER Force
+Re-run interactive setup even if a valid configuration exists.
+.EXAMPLE
+Initialize-PwshCopilot -Force
+Re-enters setup allowing provider/model changes.
+#>
 function Initialize-PwshCopilot {
     param([switch]$Force)
     # Ensure config exists and has required provider-specific fields
@@ -161,6 +172,17 @@ Use Initialize-PwshCopilotVoice (or alias Initialize-VoiceCopilot) to configure 
 Get-PSCopilotVoiceConfig returns a validated hashtable or triggers setup if missing.
 #>
 
+<#
+.SYNOPSIS
+Configure voice / transcription provider (Azure Speech legacy or Azure OpenAI Whisper).
+.DESCRIPTION
+Adds or updates voice-related fields inside the shared configuration JSON. Supports switching between legacy Azure Speech (STT/TTS) and Whisper (speech→text only). When switching providers, removes obsolete keys from the other provider to keep config clean.
+.PARAMETER Force
+Re-run voice configuration even if an existing valid voice section is present.
+.EXAMPLE
+Initialize-PwshCopilotVoice
+Interactive prompts for Whisper or Azure Speech settings.
+#>
 function Initialize-PwshCopilotVoice {
     [CmdletBinding()] param([switch]$Force)
 
@@ -222,6 +244,12 @@ function Initialize-PwshCopilotVoice {
 
 Set-Alias -Name Initialize-VoiceCopilot -Value Initialize-PwshCopilotVoice
 
+<#
+.SYNOPSIS
+Retrieve (and if missing, create) the validated voice configuration.
+.DESCRIPTION
+Loads the combined configuration JSON, ensures required fields for the selected voice provider are present, and launches interactive setup if not. Returns the config object for downstream functions.
+#>
 function Get-PSCopilotVoiceConfig {
     $cfg = Get-PSCopilotConfig
     $missing = @()
@@ -242,6 +270,17 @@ function Get-PSCopilotVoiceConfig {
 }
 
 # Check and report missing prerequisites (ffmpeg, keys, etc.)
+<#
+.SYNOPSIS
+Check presence of required external tools & voice config fields.
+.DESCRIPTION
+Validates availability of ffmpeg for microphone capture and required Whisper / Speech keys depending on provider. Returns $true if all mandatory elements exist; otherwise prints guidance. With -Silent, suppresses info output (still returns status).
+.PARAMETER Silent
+Reduce console output; only return success/failure.
+.EXAMPLE
+Test-PSCopilotPrerequisites
+Displays missing components and install guidance.
+#>
 function Test-PSCopilotPrerequisites {
     [CmdletBinding()] param([switch]$Silent)
     $cfg = $null; try { $cfg = Get-PSCopilotConfig } catch {}
