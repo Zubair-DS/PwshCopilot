@@ -1,5 +1,13 @@
 # PwshCopilot
 
+[![PowerShell Gallery Version](https://img.shields.io/powershellgallery/v/PwshCopilot.svg?color=blue&label=Gallery)](https://www.powershellgallery.com/packages/PwshCopilot)
+[![PowerShell Gallery Downloads](https://img.shields.io/powershellgallery/dt/PwshCopilot.svg?label=Downloads)](https://www.powershellgallery.com/packages/PwshCopilot)
+[![GitHub Release](https://img.shields.io/github/v/release/Zubair-DS/PwshCopilot?display_name=tag&sort=semver)](https://github.com/Zubair-DS/PwshCopilot/releases)
+[![License](https://img.shields.io/github/license/Zubair-DS/PwshCopilot.svg)](LICENSE)
+[![Issues](https://img.shields.io/github/issues/Zubair-DS/PwshCopilot.svg)](https://github.com/Zubair-DS/PwshCopilot/issues)
+[![Pull Requests](https://img.shields.io/github/issues-pr/Zubair-DS/PwshCopilot.svg)](https://github.com/Zubair-DS/PwshCopilot/pulls)
+[![Stars](https://img.shields.io/github/stars/Zubair-DS/PwshCopilot.svg?style=social)](https://github.com/Zubair-DS/PwshCopilot)
+
 AI + Voice powered assistant for PowerShell.
 
 Key features:
