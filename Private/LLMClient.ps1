@@ -19,17 +19,11 @@ function Invoke-PSCopilotLLM {
                     max_tokens  = 256
                 } | ConvertTo-Json -Depth 6
 
-                try {
-                    $response = Invoke-RestMethod -Uri $uri -Method POST -Headers $headers -Body $body
-                    if ($response -and $response.choices -and $response.choices.Count -gt 0) {
-                        return $response.choices[0].message.content
-                    }
-                    return $null
-                } catch {
-                    Remove-Item "$env:USERPROFILE\.pwshcopilot_config.json" -Force -ErrorAction SilentlyContinue
-                    Write-Host "[PwshCopilot] LLM connection failed. Please re-run Initialize-PwshCopilot and check your credentials." -ForegroundColor Red
-                    throw $_
+                $response = Invoke-RestMethod -Uri $uri -Method POST -Headers $headers -Body $body
+                if ($response -and $response.choices -and $response.choices.Count -gt 0) {
+                    return $response.choices[0].message.content
                 }
+                return $null
             }
             'Claude' {
                 $baseUrl = if ($config.BaseUrl) { $config.BaseUrl.TrimEnd('/') } else { 'https://api.anthropic.com/v1' }
@@ -48,17 +42,11 @@ function Invoke-PSCopilotLLM {
                     })
                 } | ConvertTo-Json -Depth 6
 
-                try {
-                    $response = Invoke-RestMethod -Uri $uri -Method POST -Headers $headers -Body $body
-                    if ($response -and $response.content -and $response.content.Count -gt 0) {
-                        return $response.content[0].text
-                    }
-                    return $null
-                } catch {
-                    Remove-Item "$env:USERPROFILE\.pwshcopilot_config.json" -Force -ErrorAction SilentlyContinue
-                    Write-Host "[PwshCopilot] LLM connection failed. Please re-run Initialize-PwshCopilot and check your credentials." -ForegroundColor Red
-                    throw $_
+                $response = Invoke-RestMethod -Uri $uri -Method POST -Headers $headers -Body $body
+                if ($response -and $response.content -and $response.content.Count -gt 0) {
+                    return $response.content[0].text
                 }
+                return $null
             }
             default { # AzureOpenAI
                 # {endpoint}/openai/deployments/{deployment}/chat/completions?api-version={apiVersion}
@@ -79,17 +67,11 @@ function Invoke-PSCopilotLLM {
                     # Azure uses deployment in the path; do not send "model"
                 } | ConvertTo-Json -Depth 6
 
-                try {
-                    $response = Invoke-RestMethod -Uri $uri -Method POST -Headers $headers -Body $body
-                    if ($response -and $response.choices -and $response.choices.Count -gt 0) {
-                        return $response.choices[0].message.content
-                    }
-                    return $null
-                } catch {
-                    Remove-Item "$env:USERPROFILE\.pwshcopilot_config.json" -Force -ErrorAction SilentlyContinue
-                    Write-Host "[PwshCopilot] LLM connection failed. Please re-run Initialize-PwshCopilot and check your credentials." -ForegroundColor Red
-                    throw $_
+                $response = Invoke-RestMethod -Uri $uri -Method POST -Headers $headers -Body $body
+                if ($response -and $response.choices -and $response.choices.Count -gt 0) {
+                    return $response.choices[0].message.content
                 }
+                return $null
             }
         }
     }
@@ -125,17 +107,11 @@ function Invoke-PSCopilotLLMChat {
                     temperature = 0.2
                     max_tokens  = 256
                 } | ConvertTo-Json -Depth 6
-                try {
-                    $response = Invoke-RestMethod -Uri $uri -Method POST -Headers $headers -Body $body
-                    if ($response -and $response.choices -and $response.choices.Count -gt 0) {
-                        return $response.choices[0].message.content
-                    }
-                    return $null
-                } catch {
-                    Remove-Item "$env:USERPROFILE\.pwshcopilot_config.json" -Force -ErrorAction SilentlyContinue
-                    Write-Host "[PwshCopilot] LLM connection failed. Please re-run Initialize-PwshCopilot and check your credentials." -ForegroundColor Red
-                    throw $_
+                $response = Invoke-RestMethod -Uri $uri -Method POST -Headers $headers -Body $body
+                if ($response -and $response.choices -and $response.choices.Count -gt 0) {
+                    return $response.choices[0].message.content
                 }
+                return $null
             }
             'Claude' {
                 $baseUrl = if ($config.BaseUrl) { $config.BaseUrl.TrimEnd('/') } else { 'https://api.anthropic.com/v1' }
@@ -156,17 +132,11 @@ function Invoke-PSCopilotLLMChat {
                 }
                 if ($SystemPrompt) { $body.system = $SystemPrompt }
                 $bodyJson = $body | ConvertTo-Json -Depth 8
-                try {
-                    $response = Invoke-RestMethod -Uri $uri -Method POST -Headers $headers -Body $bodyJson
-                    if ($response -and $response.content -and $response.content.Count -gt 0) {
-                        return $response.content[0].text
-                    }
-                    return $null
-                } catch {
-                    Remove-Item "$env:USERPROFILE\.pwshcopilot_config.json" -Force -ErrorAction SilentlyContinue
-                    Write-Host "[PwshCopilot] LLM connection failed. Please re-run Initialize-PwshCopilot and check your credentials." -ForegroundColor Red
-                    throw $_
+                $response = Invoke-RestMethod -Uri $uri -Method POST -Headers $headers -Body $bodyJson
+                if ($response -and $response.content -and $response.content.Count -gt 0) {
+                    return $response.content[0].text
                 }
+                return $null
             }
             default { # AzureOpenAI
                 $baseEndpoint = $config.Endpoint.TrimEnd('/')
@@ -185,17 +155,11 @@ function Invoke-PSCopilotLLMChat {
                     temperature = 0.2
                     max_tokens  = 256
                 } | ConvertTo-Json -Depth 6
-                try {
-                    $response = Invoke-RestMethod -Uri $uri -Method POST -Headers $headers -Body $body
-                    if ($response -and $response.choices -and $response.choices.Count -gt 0) {
-                        return $response.choices[0].message.content
-                    }
-                    return $null
-                } catch {
-                    Remove-Item "$env:USERPROFILE\.pwshcopilot_config.json" -Force -ErrorAction SilentlyContinue
-                    Write-Host "[PwshCopilot] LLM connection failed. Please re-run Initialize-PwshCopilot and check your credentials." -ForegroundColor Red
-                    throw $_
+                $response = Invoke-RestMethod -Uri $uri -Method POST -Headers $headers -Body $body
+                if ($response -and $response.choices -and $response.choices.Count -gt 0) {
+                    return $response.choices[0].message.content
                 }
+                return $null
             }
         }
     }

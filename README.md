@@ -1,142 +1,161 @@
-
 # PwshCopilot
 
-![PowerShell Gallery Version](https://img.shields.io/powershellgallery/v/PwshCopilot?label=PwshCopilot&logo=powershell)
-![Downloads](https://img.shields.io/powershellgallery/dt/PwshCopilot)
-![License](https://img.shields.io/badge/license-MIT-blue.svg)
-![Platform](https://img.shields.io/badge/platform-PowerShell%205.1%2B%20%7C%20Core%207+-purple)
+AI + Voice powered assistant for PowerShell.
 
-## Post-installation: Required Setup for End Users
+Key features:
+* Natural language → PowerShell command generation
+* Command explanations (alias: `Explain-PSCommand`)
+* Script scaffolding from descriptions
+* Interactive chat session with confirm-before-run safety
+* Optional voice-driven loop (Azure OpenAI Whisper transcription)
+* Inline AI Tab completions aware of your last commands & errors
 
-After installing the module with:
+---
+## 1. Install (Gallery)
 ```powershell
-Install-Module PwshCopilot -Scope CurrentUser
+Install-Module PwshCopilot -Scope CurrentUser -Force
+Import-Module PwshCopilot -Force   # triggers first-time setup prompts
 ```
-You must run the following commands to complete setup before using any features:
+Update later:
 ```powershell
-Import-Module PwshCopilot
-Initialize-PwshCopilot
-```
-This will prompt you to configure your LLM credentials. You only need to do this once, or whenever you want to change your provider or credentials.
-
-
-A PowerShell Copilot with:
-- Natural language → PowerShell commands
-- Command explanations
-- Full script generation
-- Live inline suggestions with Tab-completion (Copilot-like)
-
-## Installation
-```powershell
-Install-Module PwshCopilot -Scope CurrentUser
+Update-Module PwshCopilot
 ```
 
+Minimum PowerShell: 5.1 (works in 7.x as well).
 
+## 2. First-time setup
+On first import you select: provider (Azure OpenAI / OpenAI / Anthropic), model/deployment name, and API key.
 
-## First-time setup (required)
-You must run the interactive setup to use LLM features. After installing the module, run:
-
+From a cloned repo (dev mode):
 ```powershell
-Import-Module PwshCopilot
-Initialize-PwshCopilot
+Set-ExecutionPolicy -Scope Process Bypass -Force
+Import-Module .\PwshCopilot.psd1 -Force
+Get-PSCommandSuggestion -Description "list files"
 ```
 
-This will prompt you to choose an LLM provider and enter the required fields. If you skip this step, the first time you use any LLM-powered command (such as `Get-PSCommandSuggestion` or `Start-PSCopilotSession`), you will be prompted to complete the setup.
+Config is stored at: `$env:USERPROFILE\.pwshcopilot_config.json`.
 
-Providers:
-- 1) Azure OpenAI
-- 2) OpenAI
-- 3) Claude (Anthropic)
-
-## What's New in 1.2.0
-
-- Automatic configuration reset on upgrade or reinstall so you re-enter credentials (ensures fresh, valid settings)
-- Improved error handling: failed LLM calls clear invalid config and prompt you to re-run `Initialize-PwshCopilot`
-- Documentation clean-up
-
-If you upgrade from an earlier version, simply run:
+## 3. Reconfigure / switch provider
 ```powershell
-Import-Module PwshCopilot -Force
-Initialize-PwshCopilot
+Remove-Item "$env:USERPROFILE\.pwshcopilot_config.json" -Force -ErrorAction SilentlyContinue
+Import-Module PwshCopilot -Force   # or .\PwshCopilot.psd1
+# or interactive re-run without deleting:
+. .\Private\Config.ps1
+Initialize-PwshCopilot -Force
 ```
-to restore functionality.
-## Troubleshooting
 
-- If you are not prompted for LLM credentials, ensure the config file does not exist or is not corrupt:
-	```powershell
-	Remove-Item "$env:USERPROFILE\.pwshcopilot_config.json" -Force -ErrorAction SilentlyContinue
-	Initialize-PwshCopilot
-	```
-- All LLM-powered commands will prompt for setup if configuration is missing or incomplete.
-
-## Usage examples
+## 4. Core usage
 ```powershell
 Get-PSCommandSuggestion -Description "top 5 processes by CPU"
 Get-PSCommandExplanation -Command "Get-Process | Sort-Object CPU -Descending | Select-Object -First 5"
 New-PSHelperScript -Description "monitor disk space and alert if below 10%"
 Enable-PSCopilotCompletion
+Start-PSCopilotSession
 ```
 
-## Commands
-- **Get-PSCommandSuggestion**: Convert a natural language description into a PowerShell command.
-- **Get-PSCommandExplanation**: Explain what a PowerShell command does in plain English.
-- **New-PSHelperScript**: Generate a PowerShell script from a description and save it to disk.
-- **Start-PSCopilotSession**: Start an interactive session with inline AI suggestions.
-- **Enable-PSCopilotCompletion**: Enable Tab-triggered AI completions for the current session.
-- **Initialize-PwshCopilot**: Run interactive setup or reconfigure provider/credentials.
+## 5. Exported commands
+| Command | Purpose |
+|---------|---------|
+| Get-PSCommandSuggestion | NL description → PowerShell command |
+| Get-PSCommandExplanation (alias: Explain-PSCommand) | Explain a command |
+| New-PSHelperScript | Generate & save a script from description |
+| Start-PSCopilotSession | Text interactive chat |
+| Enable-PSCopilotCompletion | AI Tab completions |
+| Initialize-PwshCopilotVoice / Initialize-VoiceCopilot | Configure voice (Whisper) |
+| Invoke-WhisperTranscription | Mic / file speech → text |
+| Test-PSCopilotPrerequisites | Check ffmpeg & env readiness |
+| Start-VoiceCopilot | Unified voice loop (primary entry) |
 
-## Contributing
+Legacy (still callable if present in session): `Invoke-PSCopilotVoiceInput`, `Invoke-PSCopilotVoiceOutput`.
 
-PwshCopilot is open source and welcomes contributions of all sizes:
+## 6. Voice / Whisper setup
+Prerequisites:
+* `ffmpeg` (check: `ffmpeg -version`)
+	* Install: `winget install Gyan.FFmpeg` OR `choco install ffmpeg -y`
+* Working microphone
 
-1. Fork the repo and create a branch (`feature/your-idea`)
-2. Run / update tests (none yet—see roadmap) and ensure scripts lint clean with PSScriptAnalyzer
-3. Submit a Pull Request with a clear description and screenshots / transcripts where helpful
-
-Please open an Issue first for larger changes (new providers, architectural changes) so we can discuss direction.
-
-### Good First Contribution Ideas
-- Add unit tests around config validation
-- Add provider-specific key format pre-validation
-- Add streaming output support
-- Improve completion ranking heuristics
-- Add a `Remove-PwshCopilotConfig` convenience function
-
-## Roadmap (Early Draft)
-- [ ] Pluggable provider model (drop new provider without core edits)
-- [ ] Caching layer for repeated prompts
-- [ ] Script inline annotations (explain each line)
-- [ ] Optional telemetry (opt-in) for feature usage to guide roadmap
-- [ ] Pester test suite
-- [ ] GitHub Action: CI (PSScriptAnalyzer + minimal Pester tests)
-
-## Extending: Writing a Provider (Experimental)
-Create a new file under `Providers/YourProvider.ps1` and register it:
+Configure:
 ```powershell
-Register-PwshCopilotProvider -Name 'MyProvider' -Description 'Calls my internal API' -Invoke {
-	param($Prompt,$Context)
-	# TODO: call your service and return a string
-	Invoke-RestMethod -Uri "https://internal/api" -Method Post -Body (@{ q = $Prompt } | ConvertTo-Json)
-} -Validate {
-	# Optional: throw if prerequisites missing
-	return $true
-}
+Initialize-PwshCopilotVoice   # alias: Initialize-VoiceCopilot
+Test-PSCopilotPrerequisites
 ```
-List registered providers:
+Prompts request:
+* Whisper endpoint (Azure): https://<resource>.openai.azure.com
+* API key (stored locally only)
+* Deployment name (default: whisper)
+* API version (default: 2024-06-01)
+
+Usage:
 ```powershell
-Get-PwshCopilotProviders | Format-Table Name,Description,Registered
+Invoke-WhisperTranscription -UseMicrophone -Seconds 5
+Invoke-WhisperTranscription -AudioPath .\sample.wav
+Start-VoiceCopilot -CaptureSeconds 5 -VerboseTranscripts
 ```
-See `Providers/SampleProvider.Template.ps1` for a starter template.
 
-## Security & Privacy
-No credentials are stored outside your user profile config file. They are never sent anywhere except directly to the chosen LLM API endpoint. Always review generated commands before execution.
+Confirmation flow:
+1. Speak request
+2. LLM proposes a command
+3. Confirm via voice (yes/no) OR type y/n
+4. Execute or skip, repeat; say "thank you" / "exit" to end
 
-## Feedback & Recommendations
-Have ideas to make this more useful? Open an Issue titled `Idea:` or start a Discussion. Looking especially for:
-- Edge case prompts that failed or produced unsafe commands
-- Desired providers / models
-- UX improvements for the interactive session
-- Completion speed & quality feedback
+## 7. Quick verification checklist
+```powershell
+Import-Module PwshCopilot -Force
+Get-Command -Module PwshCopilot | Select-Object Name
+Test-PSCopilotPrerequisites
+Get-PSCommandSuggestion -Description "list services"
+Start-VoiceCopilot -CaptureSeconds 4   # after voice setup
+```
 
-## Star & Share
-If this helps you, please star the repository—it helps others discover it and guides future investment.
+## 8. Configuration file
+Path: `$env:USERPROFILE\.pwshcopilot_config.json`
+Delete to trigger fresh interactive setup.
+
+## 9. Security notes
+* Do NOT hard-code API keys in scripts; prefer `$env:OPENAI_API_KEY` or secure vaults.
+* Generated commands are executed only after explicit confirmation (or your choice to paste them).
+* Always review commands involving destructive actions (remove / stop / restart).
+
+## 10. Contributing
+Issues / PRs welcome at: https://github.com/Zubair-DS/PwshCopilot
+Suggested workflow:
+1. Fork & clone
+2. Create feature branch: `git checkout -b feat/<short-name>`
+3. Make changes, update README / inline help
+4. Bump version (patch/minor as appropriate) in `PwshCopilot.psd1`
+5. Run: `pwsh -NoProfile -Command "Test-ModuleManifest -Path .\\PwshCopilot.psd1 | Format-List ModuleVersion, FunctionsToExport"`
+6. Submit PR with clear description & before/after examples
+
+## 11. Releasing (maintainers)
+1. Update `ModuleVersion` in `PwshCopilot.psd1`
+2. Update this README (and optionally CHANGELOG)
+3. Tag (optional): `git tag v<version>; git push origin v<version>`
+4. Publish locally: 
+```powershell
+$key = Read-Host "NuGet API Key" -AsSecureString
+Publish-Module -Path (Resolve-Path .) -NuGetApiKey ( [System.Net.NetworkCredential]::new('', $key).Password ) -Verbose
+```
+5. Verify on PowerShell Gallery
+
+Avoid pasting raw API keys into history; use secure string or environment variable.
+
+## 12. Troubleshooting
+| Symptom | Fix |
+|---------|-----|
+| `ffmpeg` not found | Install via winget/choco; reopen terminal |
+| No mic devices | List with: `Invoke-WhisperTranscription -UseMicrophone -ListDevices` |
+| Empty transcription | Increase `-Seconds`, check input level, test plain ffmpeg recording |
+| Slow responses | Reduce context (clear history), try smaller model/deployment |
+| Tab completion silent | Re-run `Enable-PSCopilotCompletion` in current session |
+
+## 13. Roadmap (ideas)
+* Streaming partial suggestions
+* Local model backend option
+* Inline risk scoring for destructive commands
+* TTS output for Whisper mode
+
+## 14. License
+See repository (add LICENSE file if missing).
+
+---
+Happy scripting!

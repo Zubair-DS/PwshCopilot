@@ -34,86 +34,69 @@ function Initialize-PwshCopilot {
     }
 
     if ($needsConfig) {
-        while ($true) {
-            Write-Host "Welcome to PwshCopilot! Let's set up your LLM connection..." -ForegroundColor Cyan
-            Write-Host "Choose provider:" -ForegroundColor Cyan
-            Write-Host "  1) Azure OpenAI" -ForegroundColor Cyan
-            Write-Host "  2) OpenAI" -ForegroundColor Cyan
-            Write-Host "  3) Claude (Anthropic)" -ForegroundColor Cyan
-            $choice = Read-Host "Enter 1, 2, or 3"
-            switch ($choice) {
-                '2' { $provider = 'OpenAI' }
-                '3' { $provider = 'Claude' }
-                default { $provider = 'AzureOpenAI' }
-            }
-
-            if ($Force -and (Test-Path $ConfigPath)) {
-                Write-Host "Overwriting existing configuration at $ConfigPath" -ForegroundColor Yellow
-            }
-
-            switch ($provider) {
-                'OpenAI' {
-                    $apikey = Read-Host "Enter your OpenAI API key"
-                    $model = Read-Host "Enter the OpenAI model (e.g., gpt-4o-mini)"
-                    if ([string]::IsNullOrWhiteSpace($model)) { $model = 'gpt-4o-mini' }
-                    $config = @{
-                        Provider = 'OpenAI'
-                        ApiKey   = $apikey
-                        Model    = $model
-                    }
-                }
-                'Claude' {
-                    $apikey = Read-Host "Enter your Anthropic API key"
-                    $model = Read-Host "Enter the Claude model (e.g., claude-3-5-sonnet-20240620)"
-                    if ([string]::IsNullOrWhiteSpace($model)) { $model = 'claude-3-5-sonnet-20240620' }
-                    $anthVer = Read-Host "Enter Anthropic API version (default: 2023-06-01)"
-                    if ([string]::IsNullOrWhiteSpace($anthVer)) { $anthVer = '2023-06-01' }
-                    $config = @{
-                        Provider          = 'Claude'
-                        ApiKey            = $apikey
-                        Model             = $model
-                        AnthropicVersion  = $anthVer
-                    }
-                }
-                default { # AzureOpenAI
-                    $endpoint = Read-Host "Enter your Azure OpenAI endpoint (e.g., https://your-resource-name.openai.azure.com)"
-                    $apikey = Read-Host "Enter your API key"
-                    $apiversion = Read-Host "Enter your API version (e.g., 2024-12-01-preview)"
-                    $deployment = Read-Host "Enter your deployment name"
-                    if ($endpoint) { $endpoint = $endpoint.TrimEnd('/') }
-                    $config = @{
-                        Provider  = 'AzureOpenAI'
-                        Endpoint  = $endpoint
-                        ApiKey    = $apikey
-                        ApiVersion = $apiversion
-                        Deployment = $deployment
-                    }
-                }
-            }
-
-            $config | ConvertTo-Json | Set-Content -Path $ConfigPath
-            Write-Host "Configuration saved to $ConfigPath" -ForegroundColor Green
-
-            # Basic error handling: check for obviously invalid input
-            $invalid = $false
-            switch ($provider) {
-                'OpenAI' {
-                    if ([string]::IsNullOrWhiteSpace($config.ApiKey) -or $config.ApiKey.Length -lt 10) { $invalid = $true }
-                }
-                'Claude' {
-                    if ([string]::IsNullOrWhiteSpace($config.ApiKey) -or $config.ApiKey.Length -lt 10) { $invalid = $true }
-                }
-                default {
-                    if ([string]::IsNullOrWhiteSpace($config.Endpoint) -or $config.Endpoint.Length -lt 10 -or [string]::IsNullOrWhiteSpace($config.ApiKey) -or $config.ApiKey.Length -lt 10) { $invalid = $true }
-                }
-            }
-            if ($invalid) {
-                Write-Host "Invalid or incomplete configuration. Please try again." -ForegroundColor Red
-                Remove-Item $ConfigPath -Force -ErrorAction SilentlyContinue
-                continue
-            }
-            break
+        Write-Host "Welcome to PwshCopilot! Let's set up your LLM connection..." -ForegroundColor Cyan
+        Write-Host "Choose provider:" -ForegroundColor Cyan
+        Write-Host "  1) Azure OpenAI" -ForegroundColor Cyan
+        Write-Host "  2) OpenAI" -ForegroundColor Cyan
+        Write-Host "  3) Claude (Anthropic)" -ForegroundColor Cyan
+        $choice = Read-Host "Enter 1, 2, or 3"
+        switch ($choice) {
+            '2' { $provider = 'OpenAI' }
+            '3' { $provider = 'Claude' }
+            default { $provider = 'AzureOpenAI' }
         }
+
+        if ($Force -and (Test-Path $ConfigPath)) {
+            Write-Host "Overwriting existing configuration at $ConfigPath" -ForegroundColor Yellow
+        }
+
+        switch ($provider) {
+            'OpenAI' {
+                $apikey = Read-Host "Enter your OpenAI API key"
+                $model = Read-Host "Enter the OpenAI model (e.g., gpt-4o-mini)"
+                if ([string]::IsNullOrWhiteSpace($model)) { $model = 'gpt-4o-mini' }
+                $config = @{
+                    Provider = 'OpenAI'
+                    ApiKey   = $apikey
+                    Model    = $model
+                    # BaseUrl optional: default https://api.openai.com/v1
+                }
+            }
+            'Claude' {
+                $apikey = Read-Host "Enter your Anthropic API key"
+                $model = Read-Host "Enter the Claude model (e.g., claude-3-5-sonnet-20240620)"
+                if ([string]::IsNullOrWhiteSpace($model)) { $model = 'claude-3-5-sonnet-20240620' }
+                $anthVer = Read-Host "Enter Anthropic API version (default: 2023-06-01)"
+                if ([string]::IsNullOrWhiteSpace($anthVer)) { $anthVer = '2023-06-01' }
+                $config = @{
+                    Provider          = 'Claude'
+                    ApiKey            = $apikey
+                    Model             = $model
+                    AnthropicVersion  = $anthVer
+                    # BaseUrl optional: default https://api.anthropic.com/v1
+                }
+            }
+            default { # AzureOpenAI
+                $endpoint = Read-Host "Enter your Azure OpenAI endpoint (e.g., https://your-resource-name.openai.azure.com)"
+                $apikey = Read-Host "Enter your API key"
+                $apiversion = Read-Host "Enter your API version (e.g., 2024-12-01-preview)"
+                $deployment = Read-Host "Enter your deployment name"
+
+                # Normalize endpoint by trimming trailing slashes
+                if ($endpoint) { $endpoint = $endpoint.TrimEnd('/') }
+
+                $config = @{
+                    Provider  = 'AzureOpenAI'
+                    Endpoint  = $endpoint
+                    ApiKey    = $apikey
+                    ApiVersion = $apiversion
+                    Deployment = $deployment
+                }
+            }
+        }
+
+        $config | ConvertTo-Json | Set-Content -Path $ConfigPath
+        Write-Host "Configuration saved to $ConfigPath" -ForegroundColor Green
     }
 }
 
@@ -164,4 +147,131 @@ function Get-PSCopilotConfig {
 
 if ($MyInvocation.InvocationName -ne '.') {
     Initialize-PwshCopilot -Force
+}
+
+<#
+VOICE CONFIGURATION
+Adds parallel setup for Azure Speech (STT/TTS) similar to LLM provider configuration.
+Persists additional JSON keys in the existing config file:
+  SpeechProvider (currently only 'AzureSpeech')
+  SpeechKey
+  SpeechRegion
+  SpeechVoice (optional, default en-US-JennyNeural)
+Use Initialize-PwshCopilotVoice (or alias Initialize-VoiceCopilot) to configure / reconfigure.
+Get-PSCopilotVoiceConfig returns a validated hashtable or triggers setup if missing.
+#>
+
+function Initialize-PwshCopilotVoice {
+    [CmdletBinding()] param([switch]$Force)
+
+    $config = $null
+    if (Test-Path $ConfigPath) {
+        try { $config = Get-Content -Raw -Path $ConfigPath | ConvertFrom-Json } catch { $config = [pscustomobject]@{} }
+    } else { $config = [pscustomobject]@{} }
+
+    $needsConfig = $Force
+    if (-not $needsConfig) {
+        if (-not $config.SpeechProvider) { $needsConfig = $true }
+        elseif ($config.SpeechProvider -eq 'AzureSpeech' -and (-not $config.SpeechKey -or -not $config.SpeechRegion)) { $needsConfig = $true }
+        elseif ($config.SpeechProvider -eq 'AzureOpenAIWhisper' -and (-not $config.WhisperEndpoint -or -not $config.WhisperApiKey -or -not $config.WhisperDeployment -or -not $config.WhisperApiVersion)) { $needsConfig = $true }
+    }
+
+    if (-not $needsConfig) { Write-Verbose "Voice configuration already present. Use -Force to reconfigure."; return }
+
+    Write-Host "Select voice / transcription provider:" -ForegroundColor Cyan
+    Write-Host "  1) Azure Speech (legacy STT/TTS)" -ForegroundColor Cyan
+    Write-Host "  2) Azure OpenAI Whisper (recommended)" -ForegroundColor Cyan
+    $choice = Read-Host "Enter 1 or 2"
+    switch ($choice) {
+        '2' { $provider = 'AzureOpenAIWhisper' }
+        default { $provider = 'AzureSpeech' }
+    }
+
+    if ($provider -eq 'AzureSpeech') {
+        $speechKey = Read-Host "Enter your Azure Speech key"
+        $speechRegion = Read-Host "Enter your Azure Speech region (e.g., eastus)"
+        $speechVoice = Read-Host "Enter default voice (blank for en-US-JennyNeural)"
+        if ([string]::IsNullOrWhiteSpace($speechVoice)) { $speechVoice = 'en-US-JennyNeural' }
+        $config | Add-Member -NotePropertyName SpeechProvider -NotePropertyValue $provider -Force
+        $config | Add-Member -NotePropertyName SpeechKey -NotePropertyValue $speechKey -Force
+        $config | Add-Member -NotePropertyName SpeechRegion -NotePropertyValue $speechRegion -Force
+        $config | Add-Member -NotePropertyName SpeechVoice -NotePropertyValue $speechVoice -Force
+        # Clean Whisper keys if switching
+        'WhisperEndpoint','WhisperApiKey','WhisperDeployment','WhisperApiVersion' | ForEach-Object { if ($config.PSObject.Properties.Name -contains $_) { $config.PSObject.Properties.Remove($_) } }
+    }
+    else { # AzureOpenAIWhisper
+        $wEndpoint = Read-Host "Enter Whisper Azure OpenAI endpoint (e.g., https://your-resource.openai.azure.com)"
+        if ($wEndpoint) { $wEndpoint = $wEndpoint.TrimEnd('/') }
+        $wKey = Read-Host "Enter Whisper Azure OpenAI API key"
+        $wDeployment = Read-Host "Enter Whisper deployment name (default: whisper)"
+        if ([string]::IsNullOrWhiteSpace($wDeployment)) { $wDeployment = 'whisper' }
+        $wApiVersion = Read-Host "Enter Whisper API version (default: 2023-09-01-preview)"
+        if ([string]::IsNullOrWhiteSpace($wApiVersion)) { $wApiVersion = '2023-09-01-preview' }
+        $config | Add-Member -NotePropertyName SpeechProvider -NotePropertyValue $provider -Force
+        $config | Add-Member -NotePropertyName WhisperEndpoint -NotePropertyValue $wEndpoint -Force
+        $config | Add-Member -NotePropertyName WhisperApiKey -NotePropertyValue $wKey -Force
+        $config | Add-Member -NotePropertyName WhisperDeployment -NotePropertyValue $wDeployment -Force
+        $config | Add-Member -NotePropertyName WhisperApiVersion -NotePropertyValue $wApiVersion -Force
+        # Remove legacy speech fields if present (except SpeechProvider)
+        'SpeechKey','SpeechRegion','SpeechVoice' | ForEach-Object { if ($config.PSObject.Properties.Name -contains $_) { $config.PSObject.Properties.Remove($_) } }
+    }
+
+    $config | ConvertTo-Json | Set-Content -Path $ConfigPath
+    Write-Host "Voice/transcription configuration saved to $ConfigPath" -ForegroundColor Green
+}
+
+Set-Alias -Name Initialize-VoiceCopilot -Value Initialize-PwshCopilotVoice
+
+function Get-PSCopilotVoiceConfig {
+    $cfg = Get-PSCopilotConfig
+    $missing = @()
+    if (-not $cfg.SpeechProvider) { $missing += 'SpeechProvider' }
+    elseif ($cfg.SpeechProvider -eq 'AzureSpeech') {
+        if (-not $cfg.SpeechKey) { $missing += 'SpeechKey' }
+        if (-not $cfg.SpeechRegion) { $missing += 'SpeechRegion' }
+    }
+    elseif ($cfg.SpeechProvider -eq 'AzureOpenAIWhisper') {
+        foreach ($f in 'WhisperEndpoint','WhisperApiKey','WhisperDeployment','WhisperApiVersion') { if (-not $cfg.$f) { $missing += $f } }
+    }
+    if ($missing.Count -gt 0) {
+        Write-Host ("Voice configuration missing fields: {0}. Launching setup..." -f ($missing -join ', ')) -ForegroundColor Yellow
+        Initialize-PwshCopilotVoice
+        $cfg = Get-Content -Raw -Path $ConfigPath | ConvertFrom-Json
+    }
+    return $cfg
+}
+
+# Check and report missing prerequisites (ffmpeg, keys, etc.)
+function Test-PSCopilotPrerequisites {
+    [CmdletBinding()] param([switch]$Silent)
+    $cfg = $null; try { $cfg = Get-PSCopilotConfig } catch {}
+    $voice = $null; try { $voice = Get-PSCopilotVoiceConfig } catch {}
+
+    $issues = @()
+    $advise = @()
+
+    $ffmpeg = Get-Command ffmpeg -ErrorAction SilentlyContinue
+    if (-not $ffmpeg) {
+        $issues += 'ffmpeg (required for microphone audio capture)'
+        $advise += 'Install ffmpeg: winget install Gyan.FFmpeg   OR   choco install ffmpeg -y   OR download: https://www.gyan.dev/ffmpeg/builds/'
+    }
+
+    if ($voice -and $voice.SpeechProvider -eq 'AzureOpenAIWhisper') {
+        foreach ($f in 'WhisperEndpoint','WhisperApiKey','WhisperDeployment','WhisperApiVersion') {
+            if (-not $voice.$f) { $issues += "Whisper field missing: $f" }
+        }
+    }
+    elseif ($voice -and $voice.SpeechProvider -eq 'AzureSpeech') {
+        foreach ($f in 'SpeechKey','SpeechRegion') { if (-not $voice.$f) { $issues += "Azure Speech field missing: $f" } }
+    }
+
+    if ($issues.Count -eq 0) {
+        if (-not $Silent) { Write-Host 'PwshCopilot prerequisites: OK' -ForegroundColor Green }
+        return $true
+    }
+    if (-not $Silent) {
+        Write-Warning ('Missing prerequisites: ' + ($issues -join '; '))
+        foreach ($a in $advise) { Write-Host $a -ForegroundColor Yellow }
+    }
+    return $false
 }
